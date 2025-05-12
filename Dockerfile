@@ -47,7 +47,7 @@ RUN mkdir -p /root/.vnc
 RUN echo '#!/bin/sh' > /root/.vnc/xstartup
 RUN echo 'unset SESSION_MANAGER' >> /root/.vnc/xstartup
 RUN echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /root/.vnc/xstartup
-REN echo 'exec /usr/bin/gnome-session' >> /root/.vnc/xstartup
+RUN echo 'exec /usr/bin/gnome-session' >> /root/.vnc/xstartup
 RUN chmod +x /root/.vnc/xstartup
 
 EXPOSE 5901
