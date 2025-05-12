@@ -1,7 +1,12 @@
 FROM --platform=linux/amd64 ubuntu:22.04
+
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update -y && apt install --no-install-recommends -y \
+# Update and install packages in one layer, then clean up
+RUN apt-get update -y && \
+    apt-get install --no-install-recommends -y \
+    xfce4 \
+    xfce4-goodies \
     tigervnc-standalone-server \
     novnc \
     websockify \
@@ -15,42 +20,31 @@ RUN apt update -y && apt install --no-install-recommends -y \
     curl \
     wget \
     git \
-    tzdata
-
-RUN apt update -y && apt install -y \
+    tzdata \
     dbus-x11 \
     x11-utils \
     x11-xserver-utils \
-    x11-apps
+    x11-apps \
+    software-properties-common \
+    xubuntu-icon-theme && \
+    # Install Opera
+    wget -O- https://deb.opera.com/archive.key | apt-key add - && \
+    echo "deb http://deb.opera.com/opera-stable/ stable non-free" >> /etc/apt/sources.list.d/opera-stable.list && \
+    apt-get update -y && \
+    apt-get install -y opera-stable && \
+    # Clean up apt cache
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /tmp/*
 
-RUN apt install software-properties-common -y
-
-RUN apt update -y && apt install -y \
-    ubuntu-desktop \
-    ubuntu-desktop-minimal \
-    gdm3 \
-    gnome-terminal \
-    gnome-shell \
-    gnome-session
-
-RUN apt update -y && apt install -y \
-    gnupg2 \
-    lsb-release
-
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-RUN echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-RUN apt update -y && apt install -y google-chrome-stable
-
+# Create necessary file
 RUN touch /root/.Xauthority
-
-RUN mkdir -p /root/.vnc
-RUN echo '#!/bin/sh' > /root/.vnc/xstartup
-RUN echo 'unset SESSION_MANAGER' >> /root/.vnc/xstartup
-RUN echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /root/.vnc/xstartup
-RUN echo 'exec /usr/bin/gnome-session' >> /root/.vnc/xstartup
-RUN chmod +x /root/.vnc/xstartup
 
 EXPOSE 5901
 EXPOSE 6080
 
-CMD bash -c "vncserver -localhost no -SecurityTypes None -geometry 1024x768 --I-KNOW-THIS-IS-INSECURE && openssl req -new -subj "/C=JP" -x509 -days 365 -nodes -out self.pem -keyout self.pem && websockify -D --web=/usr/share/novnc/ --cert=self.pem 6080 localhost:5901 && tail -f /dev/null"
+CMD bash -c "vncserver -localhost no -SecurityTypes None -geometry 1024x768 --I-KNOW-THIS-IS-INSECURE && \
+    openssl req -new -subj '/C=JP' -x509 -days 365 -nodes -out self.pem -keyout self.pem && \
+    websockify -D --web=/usr/share/novnc/ --cert=self.pem 6080 localhost:5901 && \
+    tail -f /dev/null"
